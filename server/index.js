@@ -18,16 +18,15 @@ const authClient = new auth.OAuth2User({
 
 app.get('/api/auth/twitter', async (req, res) => {
   try {
-    const authUrl = authClient.generateAuthUrl({
+    const authUrl = authClient.generateAuthURL({
       state: "my-state",
       code_challenge_method: "s256",
     });
-    res.json({ url: authUrl });
+    res.redirect(authUrl);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
-
 app.get('/api/auth/callback/twitter', async (req, res) => {
   try {
     const { code } = req.query;
