@@ -41,6 +41,22 @@ app.get('/api/auth/callback/twitter', async (req, res) => {
     res.redirect(`https://haider-711-x.onrender.com/?status=error`);
   }
 });
+} catch (error) {
+    console.error(error);
+    res.redirect('https://haider-711-x.onrender.com/?status=error');
+  }
+});
+
+// === إضافة مسار النشر هنا ===
+app.post('/api/tweet', async (req, res) => {
+  try {
+    const { text } = req.body;
+    const createdTweet = await client.tweets.createTweet({ text: text });
+    res.json({ success: true, tweet: createdTweet });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
