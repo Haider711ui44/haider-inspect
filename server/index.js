@@ -44,14 +44,14 @@ app.get('/api/auth/callback/twitter', async (req, res) => {
   }
 });
 
-// مسار النشر على تويتر
 app.post('/api/tweet', async (req, res) => {
   try {
     const { text } = req.body;
     const createdTweet = await client.tweets.createTweet({ text: text });
     res.json({ success: true, tweet: createdTweet });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("Tweet Error:", error);
+    res.status(500).json({ error: error.message || "Failed to post tweet" });
   }
 });
 
