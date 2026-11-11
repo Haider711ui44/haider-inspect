@@ -13,7 +13,7 @@ const authClient = new auth.OAuth2User({
   client_id: process.env.X_CLIENT_ID,
   client_secret: process.env.X_CLIENT_SECRET,
   callback: process.env.X_CALLBACK_URL,
- scopes: ["tweet.read", "users.read"],
+scopes: ["tweet.read", "users.read", "tweet.write", "offline.access"],
 });
 
 app.get('/api/auth/twitter', async (req, res) => {
