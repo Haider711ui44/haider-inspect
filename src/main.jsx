@@ -15,6 +15,29 @@ function App(){
  const nums=useMemo(()=>{let a=[],s=Number(start),e=Number(end),d=Math.max(1,Number(step)||1);if(e>=s){for(let n=s;n<=e&&a.length<8;n+=d)a.push(n)}else{for(let n=s;n>=e&&a.length<8;n-=d)a.push(n)}return a},[start,end,step]);
  const preview=nums.map(n=>post.includes('{number}')?post.replaceAll('{number}',n):post+' '+n);
  const nav=[['overview',LayoutDashboard,t.overview],['posts',CalendarClock,t.posts],['followers',Users,t.followers],['activity',Activity,t.activity],['settings',Settings,t.settings]];
+ const handlePostTweet = async () => {
+    if (!post) {
+      alert('يرجى كتابة نص المنشور أولاً');
+      return;
+    }
+    try {
+      const response = await fetch('https://haider-inspect.onrender.com/api/tweet', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: post }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        alert('تم نشر التغريدة بنجاح على حسابك في X!');
+        setPost('');
+      } else {
+        alert('حدث خطأ أثناء النشر: ' + data.error);
+      }
+    } catch (error) {
+      console.error('Error posting tweet:', error);
+      alert('فشل الاتصال بالسيرفر');
+    }
+  };
  return <div className="app" dir={t.dir}>
   <aside className={`sidebar ${mobile?'open':''}`}><div className="brand"><div className="mark">X</div><div><b>{t.brand}</b><small>{t.tag}</small></div></div><button className="mobile-close" onClick={()=>setMobile(false)}><X/></button>
    <div className="nav-label">{t.overview}</div>{nav.map(([id,Icon,label])=><button key={id} className={`nav ${section===id?'active':''}`} onClick={()=>{setSection(id);setMobile(false)}}><Icon size={18}/><span>{label}</span></button>)}
