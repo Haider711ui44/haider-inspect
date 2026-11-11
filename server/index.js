@@ -1,4 +1,3 @@
-
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -7,21 +6,22 @@ import { Client, auth } from 'twitter-api-sdk';
 dotenv.config();
 
 const app = express();
-app.use(cors());
+app.use(cors({ origin: '*' }));
 app.use(express.json());
 
-let userAuthClient = null;
+let authClient = null;
+let loggedInUser = null;
 
 app.get('/api/auth/twitter', async (req, res) => {
   try {
-    userAuthClient = new auth.OAuth2User({
+    authClient = new auth.OAuth2User({
       client_id: process.env.X_CLIENT_ID,
       client_secret: process.env.X_CLIENT_SECRET,
       callback: process.env.X_CALLBACK_URL,
       scopes: ["tweet.read", "users.read", "tweet.write", "offline.access"],
     });
 
-    const authUrl = userAuthClient.generateAuthURL({
+    const authUrl = authClient.generateAuthURL({
       state: "my-state",
       code_challenge_method: "s256",
     });
@@ -34,22 +34,14 @@ app.get('/api/auth/twitter', async (req, res) => {
 app.get('/api/auth/callback/twitter', async (req, res) => {
   try {
     const { code } = req.query;
-    if (!userAuthClient) {
-      userAuthClient = new auth.OAuth2User({
-        client_id: process.env.X_CLIENT_ID,
-        client_secret: process.env.X_CLIENT_SECRET,
-        callback: process.env.X_CALLBACK_URL,
-        scopes: ["tweet.read", "users.read", "tweet.write", "offline.access"],
-      });
-    }
-    
-    await userAuthClient.requestAccessToken(code);
-    const client = new Client(userAuthClient);
+    await authClient.requestAccessToken(code);
+    const client = new Client(authClient);
     const user = await client.users.findMyUser();
+    loggedInUser = user.data.username;
 
-    res.redirect(`https://haider-711-x.onrender.com/?status=success&user=${user.data.username}`);
+    res.redirect(`https://haider-711-x.onrender.com/?status=success&user=${loggedInUser}`);
   } catch (error) {
-    console.error("Callback error:", error);
+    console.error("Callback Error:", error);
     res.redirect('https://haider-711-x.onrender.com/?status=error');
   }
 });
@@ -57,18 +49,20 @@ app.get('/api/auth/callback/twitter', async (req, res) => {
 app.post('/api/tweet', async (req, res) => {
   try {
     const { text } = req.body;
-    
-    if (!userAuthClient) {
-      return res.status(401).json({ error: "يرجى تسجيل الدخول أولاً" });
+
+    if (!authClient) {
+      return res.status(401).json({ error: "لا توجد جلسة نشطة، يرجى إعادة الضغط على ربط الحساب." });
     }
 
-    const client = new Client(userAuthClient);
+    const client = new Client(authClient);
     const createdTweet = await client.tweets.createTweet({ text: text });
     
     res.json({ success: true, tweet: createdTweet });
   } catch (error) {
-    console.error("Tweet Error:", error);
-    res.status(500).json({ error: error.message || "Failed to post tweet" });
+    console.error("Tweet API Error:", error);
+    // إرجاع نص الخطأ المباشر من تويتر لمعرفة السبب فوراً
+    const errorMsg = error?.error?.detail || error?.message || JSON.stringify(error);
+    res.status(500).json({ error: errorMsg });
   }
 });
 
