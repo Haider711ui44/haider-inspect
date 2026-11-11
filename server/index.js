@@ -13,8 +13,10 @@ const authClient = new auth.OAuth2User({
   client_id: process.env.X_CLIENT_ID,
   client_secret: process.env.X_CLIENT_SECRET,
   callback: process.env.X_CALLBACK_URL,
-scopes: ["tweet.read", "users.read", "tweet.write", "offline.access"],
+  scopes: ["tweet.read", "users.read", "tweet.write", "offline.access"],
 });
+
+const client = new Client(authClient);
 
 app.get('/api/auth/twitter', async (req, res) => {
   try {
@@ -27,27 +29,22 @@ app.get('/api/auth/twitter', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
 app.get('/api/auth/callback/twitter', async (req, res) => {
   try {
     const { code } = req.query;
     await authClient.requestAccessToken(code);
-    
-    const client = new Client(authClient);
+
     const user = await client.users.findMyUser();
 
     res.redirect(`https://haider-711-x.onrender.com/?status=success&user=${user.data.username}`);
   } catch (error) {
     console.error(error);
-    res.redirect(`https://haider-711-x.onrender.com/?status=error`);
-  }
-});
-} catch (error) {
-    console.error(error);
     res.redirect('https://haider-711-x.onrender.com/?status=error');
   }
 });
 
-// === إضافة مسار النشر هنا ===
+// مسار النشر على تويتر
 app.post('/api/tweet', async (req, res) => {
   try {
     const { text } = req.body;
